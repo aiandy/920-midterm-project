@@ -1,0 +1,71 @@
+# 920-midterm-project
+
+data midtermdata;
+	infile "E:\MSU COURSES\EPI920\midterm\HDRS.txt";
+	input PatientID cHDRS Week Group IMI DMI;
+run;
+# data: create a dataset with name midtermdata;
+# infile: infile a text profile with specific name;
+# input: input the variable names, which is necessary;
+
+proc import out=work.rats datafile="E:\MSU COURSES\EPI920\homework1\ratsdata.xlsx"
+	 DBMS=xlsx REPLACE;
+RUN;
+# import out=work.rats: input a xlsx file and the output is a dataset with name rats;
+
+proc print data=midtermdata (obs=10); run;
+# To print the first 10 obserations of the dataset;
+
+data newdata;
+	set midtermdata;
+	LDIM=log(DMI)-log(IMI);	
+	if week=0 then weekcls="0";
+	if week=1 then weekcls="1";
+	if week=2 then weekcls="2";
+	if week=3 then weekcls="3";	
+	if DMI=0 then delete;
+	if Group=0 then trt="non_endogenous";
+	if Group=1 then trt="endogenous";
+run;
+proc print data=newdata; run;
+# data newdata: create a new dataset with name newdata;
+# set midtermdata: the new dataset was obtained from the raw set midtermdata;
+# LDIM: a new variable was created by log(DMI)-log(IMI), and the new variable is continuous;
+# if week=  then : week is a continuous variable, use if then to create a new categorical variable weekcls, note to add " ";
+# if DMI=0 then delete: to delete an observation;
+# if group= then : create a new variable trt which is categorical;
+
+
+proc sort data=newdata;
+	by trt PatientID week;
+run;
+goptions reset=all i=join;
+proc gplot data=newdata;
+	plot cHDRs*week=PatientID/haxis=axis1 vaxis=axis2;
+	axis1 label=(h=2 "Time");
+	axis2 label=(h=2 "cHDRS");
+	title "cHDRS profiles for the whole sample";
+run;
+
+
+symbol1 i=join;
+symbol2 i=join;
+proc gplot data=newdata;
+	plot cHDRs*week=PatientID/haxis=axis1 vaxis=axis2;
+	by trt;
+	title "cHDRS profiles for endogenous and non-endogenous groups";
+run;
+
+#TO make a plot.
+#proc gplot data=data; plot y*x=id; by trt;run;
+#We need to sort the data with the order trt id and x; It's important to sort the data with the correct order.So we need to understand 
+#what are the y and x in our plot and if we want to make subplots for different treatement, by trt is required.
+#Sort by the subgroups first, then sort by id and then sort by x.
+#goptions reset=all: would reset the plotting settings as default. 
+#symbol1 i=join: i(interpolation) option specifies that the points are to be joined,
+#i=line would lead a curvlinear; i=std1mjt: to get the mean structure, m computes sd,j connects the means from bar to bar with a line,
+#  t:adds tops and bottoms to each line.
+#Comments for how to use the symbol:  https://v8doc.sas.com/sashtml/gref/zbolchap.htm
+#haxis= vaxis= : would help us to set the axises options.
+#title : to make a title for the figure.
+
